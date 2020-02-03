@@ -1,0 +1,44 @@
+body {
+    font-family: Helvetica, sans-serif;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+img {
+    height: 48px;
+    margin-right: 15px;
+}
+
+h2 {
+    display: inline-block;
+}
+
+.container {
+    width: 500px;
+}
+
+.instructions {
+    font-style: italic;
+    font-size: 14px;
+    padding: 5px;
+    background: #EEEEEE;
+    border: 1px solid darkgray;
+    margin-bottom: 15px;
+}
+
+.username-label {
+    font-weight: bold;
+}
+
+textarea {
+    line-height: 1.2;
+    margin-top: 20px;
+    padding: 5px;
+    height: 500px;
+    width: 100%;
+    box-sizing: border-box;
+}
