@@ -1,11 +1,9 @@
-const colorAssigner = new ConvergenceColorAssigner.ColorAssigner();
-const textarea = document.getElementById("textarea");
-
 const username = "User-" + Math.round(Math.random() * 10000);
 document.getElementById("username").innerHTML = username;
 
-let textEditor;
-let localSelectionReference;
+///////////////////////////////////////////////////////////////////////////////
+// Connect and Open the Model
+///////////////////////////////////////////////////////////////////////////////
 
 // Connect anonymously using the generated display name
 Convergence.connectAnonymously(CONVERGENCE_URL, username).then(domain => {
@@ -14,7 +12,7 @@ Convergence.connectAnonymously(CONVERGENCE_URL, username).then(domain => {
     id: "textarea",
     ephemeral: true,
     data: {
-      text: TEXT_DATA
+      text: DEFAULT_TEXT_DATA
     }
   });
 }).then(model => {
@@ -24,6 +22,12 @@ Convergence.connectAnonymously(CONVERGENCE_URL, username).then(domain => {
 }).catch(error => {
   console.error(error);
 });
+
+///////////////////////////////////////////////////////////////////////////////
+// Text Editor
+///////////////////////////////////////////////////////////////////////////////
+const textarea = document.getElementById("textarea");
+let textEditor;
 
 // Bind the text area to the real time string
 function bindTextarea(rts) {
@@ -49,10 +53,21 @@ function bindTextarea(rts) {
 ///////////////////////////////////////////////////////////////////////////////
 // Share Selection Functions
 ///////////////////////////////////////////////////////////////////////////////
+const colorAssigner = new ConvergenceColorAssigner.ColorAssigner();
+
+let localSelectionReference;
 
 function initSharedSelection(rts) {
+  // Create a local reference that will be used to send the local
+  // users selection and cursor.
   localSelectionReference = rts.rangeReference("selection");
 
+  // Set and share the local selection.
+  sendLocalSelection();
+  localSelectionReference.share();
+
+  // Get all existing "selection" references from the RealTimeString
+  // and create remote selection cue for each.
   const references = rts.references({key: "selection"});
   references.forEach((reference) => {
     if (!reference.isLocal()) {
@@ -60,9 +75,8 @@ function initSharedSelection(rts) {
     }
   });
 
-  sendLocalSelection();
-  localSelectionReference.share();
-
+  // Listen to the "reference" event which will be fired
+  // when a new remote user shares their selection.
   rts.on("reference", (e) => {
     if (e.reference.key() === "selection") {
       addRemoteSelection(e.reference);
@@ -79,14 +93,18 @@ function addRemoteSelection(reference) {
   const color = colorAssigner.getColorAsHex(reference.sessionId());
   const remoteRange = reference.value();
 
+  // Gets the text editors SelectionManager.
   const selectionManager = textEditor.selectionManager();
 
+  // Add a new collaborator to the text editor.
   selectionManager.addCollaborator(
       reference.sessionId(),
       reference.user().displayName,
       color,
       {anchor: remoteRange.start, target: remoteRange.end});
 
+  // Monitor the events from the remote reference and update the
+  // remote users selection in the SelectionManager.
   reference.on("cleared", () => selectionManager.removeCollaborator(reference.sessionId()) );
   reference.on("disposed", () => selectionManager.removeCollaborator(reference.sessionId()) );
   reference.on("set", (e) => {
